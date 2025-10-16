@@ -117,6 +117,14 @@ namespace dxvk {
     SpecFFTextureStage5AlphaArg0, // Range: 0 -> 6 + 2 flags  | Bits: 5
     SpecFFTextureStage6AlphaArg0, // Range: 0 -> 6 + 2 flags  | Bits: 5
     SpecFFTextureStage7AlphaArg0, // Range: 0 -> 6 + 2 flags  | Bits: 5
+    SpecFFTextureWrapU,           // Range: 0 -> 2            | Bits: 2
+    SpecFFTextureWrapV,           // Range: 0 -> 2            | Bits: 2
+    SpecFFColorKeyEnable,         // Range: 0 -> 1            | Bits: 1
+    SpecFFUseLegacyLights,        // Range: 0 -> 1            | Bits: 1
+
+    SpecFFColorKeyLow,            // Range: 8 bits * 4        | Bits: 32
+
+    SpecFFColorKeyHigh,           // Range: 8 bits * 4        | Bits: 32
 
     SpecConstantCount,
   };
@@ -133,7 +141,7 @@ namespace dxvk {
 
   struct D3D9SpecializationInfo {
     // Spec const word 0 determines whether the other spec constants are used rather than the spec const UBO
-    static constexpr uint32_t MaxSpecDwords = 17;
+    static constexpr uint32_t MaxSpecDwords = 19;
 
     static constexpr std::array<BitfieldPosition, SpecConstantCount> Layout{{
       { 0, 0, 32 },  // SamplerType
@@ -245,6 +253,14 @@ namespace dxvk {
       { 16,  5, 5 },  // FFTextureStage5AlphaArg0
       { 16, 10, 5 },  // FFTextureStage6AlphaArg0
       { 16, 15, 5 },  // FFTextureStage7AlphaArg0
+      { 16, 20, 2 },  // FFTextureWrapX
+      { 16, 22, 2 },  // FFTextureWrapY
+      { 16, 24, 1 },  // FFColorKeyEnable
+      { 16, 25, 1 },  // FFUseLegacyLights
+
+      { 17,  0, 32 }, // FFColorKeyLow
+
+      { 18,  0, 32 }, // FFColorKeyHigh
     }};
 
     template <D3D9SpecConstantId Id, typename T>

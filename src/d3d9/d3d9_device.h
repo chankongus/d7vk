@@ -81,6 +81,11 @@ namespace dxvk {
     PushDataFfvs,
     PushDataFfps,
 
+    FFTextureWrap,
+    FFColorKeyState,
+    FFColorKey,
+    FFLegacyLightsState,
+
     SpecializationEntries,
   };
 
@@ -993,6 +998,14 @@ namespace dxvk {
 
     void UpdateGlobalSpecular();
 
+    void UpdateTextureWrap();
+
+    void UpdateColorKeyState();
+
+    void UpdateColorKey();
+
+    void UpdateLegacyLightState();
+
     template<typename T>
     void UpdatePushDataBlock(const T& Block);
 
@@ -1125,6 +1138,22 @@ namespace dxvk {
      */
     bool ShouldRecord() const {
       return m_recorder != nullptr;
+    }
+
+    bool IsD3D3Compatible() const {
+      return m_isD3D3Compatible;
+    }
+
+    bool IsD3D5Compatible() const {
+      return m_isD3D5Compatible;
+    }
+
+    bool IsD3D6Compatible() const {
+      return m_isD3D6Compatible;
+    }
+
+    bool IsD3D7Compatible() const {
+      return m_isD3D7Compatible;
     }
 
     bool IsD3D8Compatible() const {
@@ -1422,6 +1451,34 @@ namespace dxvk {
         : GetHelper(m_state.psConsts);
     }
 
+    HRESULT SetColorKeyState(bool colorKeyState) {
+      if (likely(m_colorKeyEnable != colorKeyState)) {
+        m_dirty.set(D3D9DeviceDirtyFlag::FFColorKeyState);
+        m_colorKeyEnable = colorKeyState;
+      }
+
+      return D3D_OK;
+    }
+
+    HRESULT SetLegacyLightsState(bool legacyLightState) {
+      if (likely(m_useLegacyLights != legacyLightState)) {
+        m_dirty.set(D3D9DeviceDirtyFlag::FFLegacyLightsState);
+        m_useLegacyLights = legacyLightState;
+      }
+
+      return D3D_OK;
+    }
+
+    HRESULT SetColorKey(DWORD colorKeyLow, DWORD colorKeyHigh) {
+      if (likely(m_state.colorKeyLow != colorKeyLow || m_state.colorKeyHigh != colorKeyHigh)) {
+        m_dirty.set(D3D9DeviceDirtyFlag::FFColorKey);
+        m_state.colorKeyLow = colorKeyLow;
+        m_state.colorKeyHigh = colorKeyHigh;
+      }
+
+      return D3D_OK;
+    }
+
     void UpdateFixedFunctionVS();
 
     void UpdateFixedFunctionPS();
@@ -1616,7 +1673,17 @@ namespace dxvk {
     D3D9SpecializationInfo          m_specInfo = D3D9SpecializationInfo();
 
     bool                            m_isSWVP;
+    bool                            m_isD3D3Compatible;
+    bool                            m_isD3D5Compatible;
+    bool                            m_isD3D6Compatible;
+    bool                            m_isD3D7Compatible;
     bool                            m_isD3D8Compatible;
+
+    // D3D7 and earlier color key transparency state
+    bool                            m_colorKeyEnable   = false;
+    // D3D6 and earlier legacy light model state
+    bool                            m_useLegacyLights  = false;
+
     bool                            m_ffZTest          = false;
 
     // the enablement of below features is tracked independently
