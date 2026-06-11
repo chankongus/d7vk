@@ -4589,8 +4589,8 @@ namespace dxvk {
     if (unlikely(Type == D3DSAMP_MAGFILTER && (m_textureSlotTracking.fetch4SamplerState & samplerBit)))
       UpdateActiveFetch4(StateSampler);
 
-    if (RemapSamplerState(0) == StateSampler && (Type == D3DSAMP_ADDRESSU || Type == D3DSAMP_ADDRESSV))
-      UpdateTextureWrap();
+    if (StateSampler == RemapSamplerState(0) && (Type == D3DSAMP_ADDRESSU || Type == D3DSAMP_ADDRESSV))
+      m_dirty.set(D3D9DeviceDirtyFlag::FFTextureWrap);
 
     return D3D_OK;
   }
@@ -6650,14 +6650,17 @@ namespace dxvk {
   void D3D9DeviceEx::UpdateTextureWrap() {
     m_dirty.clr(D3D9DeviceDirtyFlag::FFTextureWrap);
 
-    auto sampler = m_state.samplerStates[RemapSamplerState(0)];
+    auto& sampler = m_state.samplerStates[RemapSamplerState(0)];
 
     DWORD addressU = sampler[D3DSAMP_ADDRESSU] == D3DTADDRESS_CLAMP ? 1
                    : sampler[D3DSAMP_ADDRESSU] == D3DTADDRESS_MIRROR ? 2 : 0;
     DWORD addressV = sampler[D3DSAMP_ADDRESSV] == D3DTADDRESS_CLAMP ? 1
                    : sampler[D3DSAMP_ADDRESSV] == D3DTADDRESS_MIRROR ? 2 : 0;
 
-    if (m_specInfo.set<SpecFFTextureWrapU>(addressU) || m_specInfo.set<SpecFFTextureWrapV>(addressV))
+    bool dirty  = m_specInfo.set<D3D9SpecConstantId::SpecFFTextureWrapU>(addressU);
+         dirty |= m_specInfo.set<D3D9SpecConstantId::SpecFFTextureWrapV>(addressV);
+
+    if (dirty)
       m_dirty.set(D3D9DeviceDirtyFlag::SpecializationEntries);
   }
 
@@ -6665,7 +6668,7 @@ namespace dxvk {
   void D3D9DeviceEx::UpdateColorKeyState() {
     m_dirty.clr(D3D9DeviceDirtyFlag::FFColorKeyState);
 
-    if (m_specInfo.set<SpecFFColorKeyEnable>(m_colorKeyEnable))
+    if (m_specInfo.set<D3D9SpecConstantId::SpecFFColorKeyEnable>(m_colorKeyEnable))
       m_dirty.set(D3D9DeviceDirtyFlag::SpecializationEntries);
   }
 
@@ -6673,8 +6676,8 @@ namespace dxvk {
   void D3D9DeviceEx::UpdateColorKey() {
     m_dirty.clr(D3D9DeviceDirtyFlag::FFColorKey);
 
-    bool dirty = m_specInfo.set<SpecFFColorKeyLow>(m_state.colorKeyLow);
-         dirty|= m_specInfo.set<SpecFFColorKeyHigh>(m_state.colorKeyHigh);
+    bool dirty  = m_specInfo.set<D3D9SpecConstantId::SpecFFColorKeyLow>(m_state.colorKeyLow);
+         dirty |= m_specInfo.set<D3D9SpecConstantId::SpecFFColorKeyHigh>(m_state.colorKeyHigh);
 
     if (dirty)
       m_dirty.set(D3D9DeviceDirtyFlag::SpecializationEntries);
@@ -6684,7 +6687,7 @@ namespace dxvk {
   void D3D9DeviceEx::UpdateLegacyLightState() {
     m_dirty.clr(D3D9DeviceDirtyFlag::FFLegacyLightsState);
 
-    if (m_specInfo.set<SpecFFUseLegacyLights>(m_useLegacyLights))
+    if (m_specInfo.set<D3D9SpecConstantId::SpecFFUseLegacyLights>(m_useLegacyLights))
       m_dirty.set(D3D9DeviceDirtyFlag::SpecializationEntries);
   }
 
